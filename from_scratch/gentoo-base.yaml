@@ -64,7 +64,7 @@ bootstrap:
     - force_vm_shutdown: true
     # - shutdown_vm_immediately: true
     # - vm_cleanup_section: bootstrap
-    # - vm_expected_service:
+    - vm_expected_service:
     # - boot_timeout: 5
 
 #  - "@base"
