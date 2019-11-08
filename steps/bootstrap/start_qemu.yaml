@@ -11,7 +11,8 @@
 - no_reboot: true
 - socat_monitor: socat - UNIX-CONNECT:$${qemu_monitor_socket}
 - qemu_sendkeys_script: $${kameleon_data_dir}/qemu-sendkeys.rb
-- qemu_sendkeys_commands: 
+- qemu_sendkeys_commands:
+- qemu_sendkeys_before_boot:
 - vm_expected_service: ssh
 - vm_cleanup_section: setup
 - shutdown_vm_immediately: false
@@ -31,7 +32,7 @@
   - on_bootstrap_clean:
     - test:
       - exec_local: test "$${shutdown_vm_immediately}" == "false" -a "$${vm_cleanup_section}" == "bootstrap"
-      - group: 
+      - group:
         - exec_local: &1 |
             if [ -f $${qemu_pidfile} ]; then
               _QEMU_PID=$(< $${qemu_pidfile})
@@ -145,6 +146,13 @@
         $QEMU_BOOT $NO_REBOOT \
         $VNC_OPT $SERIAL_TELNET\
         $LOADVM
+  - test:
+    - exec_local: test -e "$${qemu_sendkeys_before_boot}" -a -s "$${qemu_sendkeys_before_boot}"
+    - exec_local: |
+        echo "Sending keyboard commands to the VM: $${qemu_sendkeys_before_boot}"
+        echo "(Local httpd server url: http://$${local_ip}:$HTTP_PORT)"
+        ruby $${qemu_sendkeys_script} -d 0.05 "$(sed -e s/%LOCAL_IP%/$${local_ip}/g -e s/%HTTP_PORT%/$HTTP_PORT/g $${qemu_sendkeys_before_boot})" | $${socat_monitor} > /dev/null
+    - exec_local: echo "No keyboard commands to send"
   - exec_local: |
       VM_AVAILABLE=0
       if [ "$${vm_expected_service}" == "ssh" ]; then
